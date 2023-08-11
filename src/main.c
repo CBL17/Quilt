@@ -10,7 +10,7 @@
 
 #define MAX_LN_LENGTH 512
 #define MAX_NUM_ARGS 10
-#define HOME_DIR "C:/Users/Charles/Desktop/CS Projects"
+#define STARTING_DIR "C:/Users/Charles/Desktop/CS Projects"
 
 int get_input(char* line)
 {
@@ -27,9 +27,9 @@ int parse_input(char* line, int* argc, char** argv)
 
     while (token != NULL)
     {
-        if (token != NULL && token[strlen(token)-1] == '\\')
+        if (token[strlen(token)-1] == '\\')
         {
-            char* temp = (char*) malloc(1); 
+            char* temp = (char*) malloc(1);
             temp[0] = '\0';
 
             while (token[strlen(token)-1] == '\\')
@@ -61,14 +61,23 @@ int parse_input(char* line, int* argc, char** argv)
 
         else if (token[0] == '\"')
         {
-            char* pog = strdup(token+1);
-            while (token[strlen(token)-1] != '\"')
-            {
-                token = strtok(NULL, " \n\t");
-                strcat(strcat(argv[*argc], " "), strdup(token));
-            }
-            strcat(argv[*argc], strdup(pog));
+            char* temp = strdup(token+1);
+            token = strtok(NULL, "\"");
 
+            if (token != NULL)
+            {
+                temp = realloc(temp, strlen(temp) + strlen(token) + strlen(" ") + 1); //extra strlen is for readability, technically slows down code
+                temp[strlen(temp)] = ' '; 
+                temp = strcat(temp, token);
+
+                argv[*argc] = strdup(temp);
+            }
+            else //token can be null if there are spaces after the single word in quotes which IS BAD 
+            {
+                temp[strlen(temp)-1] = '\0';
+                argv[*argc] = strdup(temp);
+            }
+            free(temp);
         } 
 
         else
@@ -116,9 +125,8 @@ int command_runner(const int argc, char** argv, char* current_dir)
 
 int main(void)
 {
-    chdir(HOME_DIR);
-
-    char current_dir[MAX_PATH] = HOME_DIR;
+    chdir(STARTING_DIR);
+    char current_dir[MAX_PATH] = STARTING_DIR;
 
     char success = EXIT_SUCCESS;
 
