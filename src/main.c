@@ -19,24 +19,64 @@ int get_input(char* line)
     return 0;
 }
 
+
 int parse_input(char* line, int* argc, char** argv)
 {
-    char* token = strtok(line, " \n\t");
     *argc = 0;
+    char* token = strtok(line, " \n\t");
 
     while (token != NULL)
     {
-        if (token[strlen(token)-1] == '\\')
+        if (token != NULL && token[strlen(token)-1] == '\\')
         {
-            token[strlen(token)-1] = '\0';
-            argv[*argc] = strcat(strcat(strdup(token), " "), strtok(NULL, " \n\t")); // leave space in between tokens
+            char* temp = (char*) malloc(1); 
+            temp[0] = '\0';
+
+            while (token[strlen(token)-1] == '\\')
+            {
+                token[strlen(token)-1] = ' ';
+
+                temp = (char*) realloc(temp, strlen(temp) + strlen(token) + 1);
+                temp = strcat(temp, token);
+                
+                token = strtok(NULL, " \n\t");
+                if (token == NULL)
+                {
+                    break;
+                }
+
+                if (token != NULL && token[strlen(token)-1] == '\\')
+                {
+                    continue;
+                }
+                else
+                {
+                    temp = (char*) realloc(temp, strlen(temp) + strlen(token) + 1);
+                    temp = strcat(temp, token);
+                }
+            }
+            argv[*argc] = strdup(temp);
+            free(temp);
+        }
+
+        else if (token[0] == '\"')
+        {
+            char* pog = strdup(token+1);
+            while (token[strlen(token)-1] != '\"')
+            {
+                token = strtok(NULL, " \n\t");
+                strcat(strcat(argv[*argc], " "), strdup(token));
+            }
+            strcat(argv[*argc], strdup(pog));
+
         } 
+
         else
         {
             argv[*argc] = strdup(token);
         }
-        token = strtok(NULL, " \n\t");
 
+        token = strtok(NULL, " \n\t");
         (*argc)++;
     }
 
@@ -61,10 +101,14 @@ int command_runner(const int argc, char** argv, char* current_dir)
     else if (strcmp(argv[0], "cd") == 0)
     {
         _cd(current_dir, argv);
-    }  
+    }
+    else if (strcmp(argv[0], "echo") == 0)
+    {
+        _echo(argv[1]);
+    }
     else
     {
-        printf("%s: command not recognized\n", argv[0]);
+        fprintf(stdout, "%s: command not recognized\n", argv[0]);
     }
     return 0;
 }
@@ -75,34 +119,34 @@ int main(void)
     chdir(HOME_DIR);
 
     char current_dir[MAX_PATH] = HOME_DIR;
-    SetEnvironmentVariable("HOME", HOME_DIR);
 
     char success = EXIT_SUCCESS;
 
     while(success != EXIT_FAILURE) 
     {
         char line[MAX_LN_LENGTH];
+
         int num_args;
         char* arguments[MAX_NUM_ARGS] = {NULL};
 
-        DWORD pathSize = GetFullPathName(".", MAX_PATH, current_dir, NULL);
-
-        if (pathSize > MAX_PATH)
-        {
-            perror("Path name too big");
-        }
 
         printf("\n(%s)\n", current_dir);
         printf("> ");
 
         get_input(line);
-        parse_input(line, &num_args, arguments);
+        if (parse_input(line, &num_args, arguments) == -1)
+        {
+            printf("Parsing failure.");
+            return EXIT_FAILURE;
+        }
         command_runner(num_args, arguments, current_dir);
+
+        fflush(stdout);
 
         for (int i = 0; i < num_args; i++) {
             free(arguments[i]);
         }
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }
