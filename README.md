@@ -1,5 +1,5 @@
 # Quilt:
-### A terminal emulator for IDRK who.
+### A shell for IDRK who.
 
  *"Not, like, a nice quilt."*
 
